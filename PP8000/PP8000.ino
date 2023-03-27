@@ -2,7 +2,7 @@
 float alkuArvo = analogRead(A0); //analogipinnistä saatava lukema, siirsin tämän loopin ulkopuolelle
 bool mittaus = false; //mittauskytkin
 bool halytys = false; //hälytyskytkin
-int ajastin = 0; //ajastimen muuttuja
+int ajastin; //ajastimen muuttuja
 
 LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit. 
                                 //Portit 1-2 on tarkoitettu R/S (Register Select) ja E (Enable) porteille ja 3-6 porteille joista syötetään bittejä näytölle.
@@ -28,7 +28,8 @@ void loop() {
   lcd.clear(); //tyhjennetään LCD-näyttö
   //LCD-näytön esimerkkikoodi loppuu
 
-  /*if (ajastin >= 500000){ //Hälyttimen placeholder
+  /*
+    if (ajastin >= 500000){ //Hälyttimen placeholder
     halytys = true;
   }*/
   
@@ -52,7 +53,7 @@ void loop() {
       }
     else if (alkuArvo == 0 && mittaus == true){ //jos anturilta saatava lukema on 0 ja mittaus on käynnissä  
       mittaus = false; //asetetaan mittaus päättyneeksi
-      
+      lcd.clear(); //tyhjennetään LCD-näyttö
       }
     } 
   

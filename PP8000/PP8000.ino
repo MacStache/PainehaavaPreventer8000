@@ -63,7 +63,7 @@ void setup() {
     lcd.println("Kaynnistys");
     lcd.setCursor(0,1);
     lcd.println("valmis");
-    delay(5000);
+    delay(2000);
   }
   while (!LoadCell.update());
   calibrate(); //Aloita kalibrointi
@@ -140,19 +140,19 @@ void calibrate() {
   lcd.println("Aloita");
   lcd.setCursor(0,1);
   lcd.println("kalibrointi:");
-  delay(4000);
+  delay(2000);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.println("Aseta anturit");
   lcd.setCursor(0,1);
   lcd.println("tasaiselle.");
-  delay(3000);
+  delay(2000);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.println("Poista paino");
   lcd.setCursor(0,1); 
   lcd.println("antureilta");
-  delay(10000);
+  delay(2000);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.println("Paina nappia");
@@ -251,8 +251,10 @@ void calibrate() {
   }
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.println("Kalibrointi valmis");
-  delay(5000);
+  lcd.println("Kalibrointi");
+  lcd.setCursor(0,1);
+  lcd.println("valmis");
+  delay(3000);
   lcd.clear();
   lcd.println("Kalibroidaksesi uudelleen");
   lcd.setCursor(0,1);

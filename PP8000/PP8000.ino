@@ -189,7 +189,7 @@ void calibrate() {
   lcd.setCursor(0,0);
   lcd.println("Kalibrointiarvo: ");
   lcd.setCursor(0,1);
-  lcd.println(newCalibrationValue); //Tämä kalibraatioarvo merkkaa asiakkaan painoa.
+  lcd.println(newCalibrationValue); //Tämä muuttuja merkitsee asiakkaan painoa.
   Serial.println(newCalibrationValue);
   delay(5000);
   lcd.setCursor(0,0);

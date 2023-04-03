@@ -1,7 +1,7 @@
-#include <LiquidCrystal.h>
-#include <HX711_ADC.h>
-#if defined(ESP8266)|| defined(ESP32) || defined(AVR)
-#include <EEPROM.h>
+#include <LiquidCrystal.h> //LCD-näytön kirjaston header
+#include <HX711_ADC.h> //HX711 vahvistimen kirjaston header
+#if defined(ESP8266)|| defined(ESP32) || defined(AVR) //Eri mikrokontrollerityyppejä
+#include <EEPROM.h> //EEPROM -kirjaston header
 #endif
 
 //pinnit:
@@ -11,11 +11,10 @@ const int HX711_sck = 11; //mcu > HX711 sck pinni
 //HX711 määrittely:
 HX711_ADC LoadCell(HX711_dout, HX711_sck); //LoadCell() saa tietonsa HX711_dout ja _sck pinneistä
 
-const int calVal_eepromAdress = 0;
+const int calVal_eepromAdress = 0; //Asetetaan EEPROM-osoitteeksi 0. EEPROM = Electrically Erasable Programmable Read-Only Memory
 unsigned long t = 0;
 
 //Mittaukseen liittyvät muuttujat
-float alkuArvo = 0; //Mittauksen aloitusarvo
 bool mittaus = false; //mittauskytkin
 bool halytys = false; //hälytyskytkin
 int ajastin; //ajastimen muuttuja
@@ -30,13 +29,13 @@ void setup() {
   Serial.begin(57600); delay(10);
   lcd.begin(16,2); //määritellään LCD-näytön mitat (16x2 -merkkiä)
 
-  //Anturien kalibrointi ja taaraus
+  //Anturien kalibrointi ja taaraus aloitetaan
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("Kaynnistetaan...");
 
   LoadCell.begin();
-  //LoadCell.setReverseOutput(); //Kommentti pois jos halutaan muuttaa negatiivinen mittaustulos positiiviseksi
+  //LoadCell.setReverseOutput(); //Kommentti pois jos halutaan muuttaa negatiivinen mittaustulos positiiviseksi, eli asettaa anturi toisin päin.
   unsigned long stabilizingtime = 2000; // Käynnistyksen jälkeistä tarkkuutta voidaan korottaa asettamalla pidempi stabilointiaika (nyt 2000ms/2s)
   boolean _tare = true; //Aseta tämä false asentoon jos et halua taarata
 
@@ -71,6 +70,7 @@ void setup() {
 
 void loop() {
 
+  bool mittaus = true;
   static boolean newDataReady = 0; 
   const int serialPrintInterval = 1000; //Syötteen tulostuksen nopeuden määritys. Korkeampi on hitaampi.
 
@@ -107,35 +107,11 @@ void loop() {
     lcd.println("suoritettu.");
   }
 }
-  
-/* TULEVAA KOODIA JOKA ON KOMMENTOITU, KOSKA SE EI OLE VALMIS
-while (alkuArvo >= 0 && mittaus == false){ //Jos massa on suurempi kuin 0 ja jos mittaus ei ole jo käynnissä käynnistetään anturienLuku- ja LCD;n kirjoitusfunktio
-    if (mittaus = false){ //Jos mittaus ei ole jo käynnissä
-      mittaus = true; //Asetetaan mittaus alkaneeksi
-      //int ajastin = 0; //Ajastimen placeholder, ei toiminnallinen. Startataan ajastin kun anturienluku() funktiota kutsutaan
-     
-      float massa = (alkuArvo - 511)*125.0/6.0; // Ei mitään hajua mitä tässä lasketaan, otin youtubesta Henkan kommentti: Tässä lasketaan luultavasti kalibrointi. 
 
-      lcd.setCursor(0,0); //Siirretään kursori ensimmäisen rivin ensimmäisen merkin kohdalle
-      lcd.print("Massa: "); //Kirjoitetaan näytölle, että mitä näytetään
-      lcd.print(massa);  //Kirjoitetaan massa muuttujan arvo, joka näyttää vielä mitä sattuu, pitää kalibroida
-      //Serial.print(" kg"); //En tiedä onko tarpeellistä lisätä yksikköä
-      lcd.setCursor(0,1); //Siirretään kursori toisen rivin ensimmäisen merkin kohdalle
-      //Näillä alemmillahan ei ole mitään merkitystä, mutta voidaan asettaa niihin toisen anturin tiedot, esim massa2 muuttuja ja toinen analogiportti
-      Serial.print("	V: ");
-      Serial.print(analogRead(A0)*5.0/1023.0);  // Lasketaan analogipinnin saama jännite
-      Serial.println("V");
-      delay(10);
-      }
-    else if (alkuArvo == 0 && mittaus == true){ //jos anturilta saatava lukema on 0 ja mittaus on käynnissä  
-      mittaus = false; //asetetaan mittaus päättyneeksi
-      lcd.clear(); //tyhjennetään LCD-näyttö
-      }
-    } 
-*/
-  
+//Kalibrointifunktion aloitus
 void calibrate() {
-  lcd.clear();
+  //Alussa tulostetaan LCD-näytölle ohjeita
+  lcd.clear(); 
   lcd.setCursor(0,0);
   lcd.println("Aloita");
   lcd.setCursor(0,1);
@@ -159,7 +135,7 @@ void calibrate() {
   lcd.setCursor(0,1);
   lcd.println("kun olet valmis");
 
-  boolean _resume = false; //Odotetaan, että käyttäjä painaa nappia
+  boolean _resume = false; //Odotetaan, että käyttäjä painaa nappia. Jatkossa tästä siirrytään suoraan "Mitataan tiedetty massa" -vaiheeseen
   while (_resume == false) {
     LoadCell.update();
     if (Serial.available() > 0) {
@@ -176,7 +152,7 @@ void calibrate() {
       _resume = true; //Jatketaan kalibrointia
     }
   }
-//Taarataan käyttäjän tietämän painon mukaan
+//Taarataan käyttäjän tietämän painon mukaan. Jatkossa tämä osa on turha, koska kalibroimme anturit ennakkoon saadulla luvulla. 
   lcd.clear(); 
   lcd.setCursor(0,0);
   lcd.println("Aseta tiedetty");
@@ -187,7 +163,8 @@ void calibrate() {
   lcd.setCursor(0,0);
   lcd.println("ja syota paino");
 
-//Mitataan tiedetty massa
+//Mitataan tiedetty massa. 
+//Tällä koodilla voidaan kuitenkin toteuttaa henkilöpainon taaraaminen nappia painamalla (ohitetaan painon syöttäminen ja pyydetään painamaan nappia).
   float known_mass = 0;
   _resume = false;
   while (_resume == false) {
@@ -205,14 +182,14 @@ void calibrate() {
     }
   }
 
-  LoadCell.refreshDataSet(); //Päivitetään DataSetti, jotta varmistetaan, että paino on oikein
+  LoadCell.refreshDataSet(); //Päivitetään DataSetti, jotta varmistetaan, että paino päivittyy oikein
   float newCalibrationValue = LoadCell.getNewCalibration(known_mass); //Noudetaan uusi kalibrointiarvo
 
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.println("Kalibrointiarvo: ");
   lcd.setCursor(0,1);
-  lcd.println(newCalibrationValue);
+  lcd.println(newCalibrationValue); //Tämä kalibraatioarvo merkkaa asiakkaan painoa.
   Serial.println(newCalibrationValue);
   delay(5000);
   lcd.setCursor(0,0);
@@ -223,12 +200,13 @@ void calibrate() {
   Serial.print(calVal_eepromAdress);
   Serial.println("? y/n");
 
+//Tässä kysytään käyttäjältä, että tallennetaanko paino muistiin. Otetaan syöte serial monitorilta, mutta muutetaan tämä niin, että se toimii automaattisesti tai napin kautta.
   _resume = false;
   while (_resume == false) {
     if (Serial.available() > 0) {
-      char inByte = Serial.read(); //Tässä otetaan syöte serial monitorilta, mutta muutetaan tämä niin, että se toimii automaattisesti tai napin kautta.
+      char inByte = Serial.read(); 
       if (inByte == 'y') {
-#if defined(ESP8266)|| defined(ESP32)
+#if defined(ESP8266)|| defined(ESP32) //Ohjelma valitsee automaattisesti erilaisista mikrokontrollereista
         EEPROM.begin(512);
 #endif
         EEPROM.put(calVal_eepromAdress, newCalibrationValue);
@@ -238,7 +216,7 @@ void calibrate() {
         EEPROM.get(calVal_eepromAdress, newCalibrationValue);
         Serial.print("Arvo ");
         Serial.print(newCalibrationValue);
-        Serial.print(" tallennettu EEPROM osoitteeseen: ");
+        Serial.print(" tallennettu EEPROM osoitteeseen: "); //Tallennetaan massatieto EEPROM-muistiin. Tämä toimii toistaiseksi Serial Monitorin kautta.
         Serial.println(calVal_eepromAdress);
         _resume = true;
 
@@ -249,6 +227,7 @@ void calibrate() {
       }
     }
   }
+  //Kalibrointi on valmis. Ilmoitetaan tämä käyttäjälle LCD-näytön kautta.
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.println("Kalibrointi");
@@ -261,8 +240,3 @@ void calibrate() {
   lcd.println("Paina nappia");
   
 }
-
-
-  
-
-

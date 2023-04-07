@@ -98,7 +98,7 @@ void createCustomChars() {
 
 void setup() {
 
-Serial.begin(9600); delay(10);
+Serial.begin(57600); delay(10);
   lcd.begin(16,2); //määritellään LCD-näytön mitat (16x2 -merkkiä)
   createCustomChars();  // Ääkköset: 1=ä, 2=ö, 3=Ä, 4=Ö
 

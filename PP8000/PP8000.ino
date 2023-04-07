@@ -18,6 +18,9 @@ unsigned long t = 0;
 bool mittaus = false; //mittauskytkin
 bool halytys = false; //hälytyskytkin
 int ajastin; //ajastimen muuttuja
+float mmHg = 9.81/(0.1*0.1)/133.322;  //paineen laskukaava elohopeamillimetreinä (10x10cm pinta-alalla)
+float userWeight = 80;  //käyttäjän paino muuttujana: saadaanko laitteesta asetettua tämä käyttäjän todellisen painon mukaan?
+float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan tarpeeseen, jos ei toimi samalla arvolla. userWeight pitää nollata, jos tarvii kalibroida!
 
 LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit. 
                                 //Portit 1-2 on tarkoitettu R/S (Register Select) ja E (Enable) porteille ja 3-6 porteille joista syötetään bittejä näytölle.
@@ -28,11 +31,22 @@ void setup() {
 
   Serial.begin(57600); delay(10);
   lcd.begin(16,2); //määritellään LCD-näytön mitat (16x2 -merkkiä)
+  createCustomChars();  // Ääkköset: 1=ä, 2=ö, 3=Ä, 4=Ö
 
   //Anturien kalibrointi ja taaraus aloitetaan
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("Kaynnistetaan...");
+  lcd.print("K");
+  lcd.write(1); // ä
+  lcd.print("ynnistet");
+  lcd.write(1); // ä
+  lcd.write(1); // ä
+  lcd.print("n...");
+  lcd.setCursor(0,1);
+  lcd.write(3); // Ä
+  lcd.print("L");
+  lcd.write(3); // Ä
+  lcd.print(" ISTU");
 
   LoadCell.begin();
   //LoadCell.setReverseOutput(); //Kommentti pois jos halutaan muuttaa negatiivinen mittaustulos positiiviseksi, eli asettaa anturi toisin päin.
@@ -50,22 +64,24 @@ void setup() {
     delay(3000);
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.println("ja pinnien");
+    lcd.print("ja pinnien");
     lcd.setCursor(0,1);
-    lcd.println("asennot.");
+    lcd.print("asennot.");
     while (1);
   }
   else {
-    LoadCell.setCalFactor(1.0); // Käyttäjän asetama kalibraatiomääre (float), oletusasetuksena 1.0 mutta voidaan muuttaa tarvittaessa
+    LoadCell.setCalFactor(calibrationValue);
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.println("Kaynnistys");
+    lcd.print("K");
+    lcd.write(1); // ä
+    lcd.print("ynnistys");
     lcd.setCursor(0,1);
-    lcd.println("valmis");
+    lcd.print("valmis");
     delay(2000);
   }
-  while (!LoadCell.update());
-  calibrate(); //Aloita kalibrointi
+//  while (!LoadCell.update());         //tarpeettomia uudessa koodissa?
+//  calibrate(); //Aloita kalibrointi   //tarpeettomia uudessa koodissa?
 }
 
 void loop() {
@@ -80,22 +96,48 @@ void loop() {
   // Haetaan pyöristetyt arvot datasetistä ja tulostetaan ne
   if (newDataReady) {
     if (millis() > t + serialPrintInterval) {
+
+      if (LoadCell.getData() < 0){  //kun < 0, niin antaa vasemman pakaran paineen
+        int i = (-userWeight/2 + LoadCell.getData()) * mmHg;  //userWeight toteutettanee jotenkin järkevämmin. huom etumerkki, jotta saadaan positiivinen lukema.
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("Vasen pakara: ");
+        lcd.setCursor(0,1);
+        lcd.print(-i);  // käännetään etumerkki, jotta näkyy positiivisena paineena
+        lcd.print(" mmHg");
+        newDataReady = 0;
+        t = millis();
+      }        
+        else {  //kun > 0, niin antaa oikean pakaran paineen
+          int i = (userWeight/2 + LoadCell.getData()) * mmHg; //userWeight toteutettanee jotenkin järkevämmin
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Oikea pakara: ");
+          lcd.setCursor(0,1);
+          lcd.print(i);
+          lcd.print(" mmHg");
+          newDataReady = 0;
+          t = millis();
+        }        
+    }
+//  LUKEMA KILOGRAMMOINA KOMMENTOITU POIS:
+/*
       float i = LoadCell.getData();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.println("Painon maara: ");
+      lcd.println("Painon maara: ");  //println tekee LCD-näyttöön ylimääräisiä merkkejä
       lcd.setCursor(0,1);
-      lcd.println(i);
+      lcd.println(i);                 //println tekee LCD-näyttöön ylimääräisiä merkkejä
       newDataReady = 0;
       t = millis();
-    }
-  }
+*/
+
 
   // Komennot, jotka otetaan vastan serial monitorista. Tämä muutetaan napin/nappien taakse.
   if (Serial.available() > 0) {
     char inByte = Serial.read();
     if (inByte == 't') LoadCell.tareNoDelay(); //taaraus käynnistetään syöttämällä t. Tämä muutetaan napin taakse
-    else if (inByte == 'r') calibrate(); //kalibroi syöttämällä r. Laitetaan tämä napin taakse
+//    else if (inByte == 'r') calibrate(); //kalibroi syöttämällä r. Laitetaan tämä napin taakse <-- kommentoitu pois, jotta ei yritä kalibroida
   }
 
   // Tarkistetaan, että onko taaraus suoritettu
@@ -105,9 +147,13 @@ void loop() {
     lcd.println("Taaraus"); 
     lcd.setCursor(0,1);
     lcd.println("suoritettu.");
-  }
+    }
+  } 
 }
 
+
+// KALIBROINTI KOMMENTOITU POIS:
+/*
 //Kalibrointifunktion aloitus
 void calibrate() {
   //Alussa tulostetaan LCD-näytölle ohjeita
@@ -239,4 +285,55 @@ void calibrate() {
   lcd.setCursor(0,1);
   lcd.println("Paina nappia");
   
+}
+*/
+
+// Ääkkös-aliohjelma. Siirretään myöhemmin omaan headeriin?
+void createCustomChars() {
+  byte AwithDots[8] = {
+    B01010,
+    B00000,
+    B01110,
+    B00001,
+    B01111,
+    B10001,
+    B01111,
+  };
+  
+  byte OwithDots[8] = {
+    B01010,
+    B00000,
+    B01110,
+    B10001,
+    B10001,
+    B10001,
+    B01110,
+  };
+  
+  byte CapitalAwithDots[8] = {
+    B01010,
+    B00000,
+    B01110,
+    B10001,
+    B11111,
+    B10001,
+    B10001,
+  };
+  
+  byte CapitalOwithDots[8] = {
+    B01010,
+    B00000,
+    B01110,
+    B10001,
+    B10001,
+    B10001,
+    B01110,
+  };
+
+//Muutetaan numerot, jos 1-4 aiheuttaa ongelmia muun koodin kanssa
+
+  lcd.createChar(1, AwithDots);         // ä
+  lcd.createChar(2, OwithDots);         // ö
+  lcd.createChar(3, CapitalAwithDots);  // Ä
+  lcd.createChar(4, CapitalOwithDots);  // Ö
 }

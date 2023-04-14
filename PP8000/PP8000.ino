@@ -41,7 +41,6 @@ void setup() {
 
 lcd.begin(16,2); // Määritellään LCD-näytön koko
 createCustomChars(lcd);
-
 }
 
 void loop() {
@@ -49,8 +48,9 @@ void loop() {
 while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus" -kytkimen asento on true
                           //Siirsin tämän osan koodia setupista loopin alkuun.
   lcdFunc(lcd, 255,255,""); //lcdFunc tyhjentää näytön
-  lcdFunc(lcd, 0,0, "Käynnistetään"); //lcdFunc kirjoittaa ensimmäisen sarakkeen ensimmäiseen riviin viestin
-  lcdFunc(lcd, 0,1, "ÄÄ ÖÖ"); //lcdFunc kirjoittaa ensimmäisen sarakkeen toiselle riville viestin
+  lcdFunc(lcd, 0,0, "Kaynnistetaan"); //lcdFunc kirjoittaa ensimmäisen sarakkeen ensimmäiseen riviin viestin
+  delay(3000);
+  lcdFunc(lcd, 0,1, "ALA ISTU"); //lcdFunc kirjoittaa ensimmäisen sarakkeen toiselle riville viestin
 
   LoadCell.begin();
   //LoadCell.setReverseOutput(); //Kommentti pois jos halutaan muuttaa negatiivinen mittaustulos positiiviseksi, eli asettaa anturi toisin päin.
@@ -72,8 +72,8 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
   else {
     LoadCell.setCalFactor(calibrationValue);
     lcdFunc(lcd, 255,255,"");
-    lcdFunc(lcd, 0, 0, "Käynnistys");
-    lcdFunc(lcd, 0, 1, "Valmis");
+    lcdFunc(lcd, 0, 0, "Kaynnistys");
+    lcdFunc(lcd, 0, 1, "valmis");
     taaraus = false;
     delay(3000);
   }

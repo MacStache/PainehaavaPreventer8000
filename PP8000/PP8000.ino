@@ -28,7 +28,7 @@ unsigned long t = 0;
 
 //Mittaukseen liittyvät muuttujat
 float pressure = 9.81/(0.1*0.1)/133.322;  //paineen laskukaava elohopeamillimetreinä (10x10cm pinta-alalla)
-float weight =80;  //käyttäjän paino muuttujana: saadaanko laitteesta asetettua tämä käyttäjän todellisen painon mukaan?
+float weight = 80;  //käyttäjän paino muuttujana: Henkilöity 80 kiloiselle käyttäjälle
 float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan tarpeeseen, jos ei toimi samalla arvolla, weight pitää nollata, jos tarvii kalibroida!
 
 
@@ -91,7 +91,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
     if (millis() > t + serialPrintInterval) {
 
       if (LoadCell.getData() < 0){  //kun < 0, niin antaa vasemman pakaran paineen
-        int i = (-weight/2 + LoadCell.getData()) * pressure;  //FIXME weight toteutettanee jotenkin järkevämmin. huom etumerkki, jotta saadaan positiivinen lukema.
+        int i = (-weight/2 + LoadCell.getData()) * pressure;  //Elohopeamillimetrien laskukaava vasemmanpuoleiselle anturille. Huom. etumerkki, jotta saadaan positiivinen lukema.
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Vasen pakara");
         lcdFunc(lcd, 0, 1, "mmHg: "); //Vaihdoin tässä kokonaislukuna tulevan int i -muuttujan ja "mmHg" -tekstiosan paikat, jotta lcdFunc -toimii oikein ja mahdollisimman pienellä säädöllä
@@ -100,7 +100,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
         t = millis();
       }        
       else {  //kun > 0, niin antaa oikean pakaran paineen
-        int i = (weight/2 + LoadCell.getData()) * pressure; //FIXME weight toteutettanee jotenkin järkevämmin
+        int i = (weight/2 + LoadCell.getData()) * pressure; //Elohopeamillimetrien laskukaava oikeanpuoleiselle anturille.
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Oikea pakara");
         lcdFunc(lcd, 0, 1, "mmHg: ");

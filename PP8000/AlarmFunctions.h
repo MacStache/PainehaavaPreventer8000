@@ -1,5 +1,5 @@
 bool alarm = true; //asetetaan halytyksen alkuarvo (= tosi)
-const int buzzerPin = 6; //summerin pinnin paikka Arduinossa, valittavissa
+const int buzzerPin = 12; //summerin pinnin paikka Arduinossa, valittavissa
 
 void SetupAlarm() {  //luodaan halytysfunktio
   int i = 0;

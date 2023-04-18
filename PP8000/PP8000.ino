@@ -28,7 +28,7 @@ unsigned long t = 0;
 
 //Mittaukseen liittyvät muuttujat
 float pressure = 9.81/(0.1*0.1)/133.322;  //paineen laskukaava elohopeamillimetreinä (10x10cm pinta-alalla)
-float weight = 80;  //käyttäjän paino muuttujana: Henkilöity 80 kiloiselle käyttäjälle
+float weight = 100;  //käyttäjän paino muuttujana: Henkilöity 100 kiloiselle käyttäjälle
 float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan tarpeeseen, jos ei toimi samalla arvolla, weight pitää nollata, jos tarvii kalibroida!
 
 
@@ -40,6 +40,7 @@ LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit.
 void setup() {
 
 lcd.begin(16,2); // Määritellään LCD-näytön koko
+//createCustomChars(lcd);
 createCustomChars(lcd);
 }
 
@@ -48,9 +49,9 @@ void loop() {
 while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus" -kytkimen asento on true
                           //Siirsin tämän osan koodia setupista loopin alkuun.
   lcdFunc(lcd, 255,255,""); //lcdFunc tyhjentää näytön
-  lcdFunc(lcd, 0,0, "Kaynnistetaan"); //lcdFunc kirjoittaa ensimmäisen sarakkeen ensimmäiseen riviin viestin
-  delay(3000);
-  lcdFunc(lcd, 0,1, "ALA ISTU"); //lcdFunc kirjoittaa ensimmäisen sarakkeen toiselle riville viestin
+  lcdFunc(lcd, 0, 0, "Käynnistetään"); //lcdFunc kirjoittaa ensimmäisen sarakkeen ensimmäiseen riviin viestin
+  delay(1000);
+  lcdFunc(lcd, 0, 1, "ÄLÄ ISTU"); //lcdFunc kirjoittaa ensimmäisen sarakkeen toiselle riville viestin
 
   LoadCell.begin();
   //LoadCell.setReverseOutput(); //Kommentti pois jos halutaan muuttaa negatiivinen mittaustulos positiiviseksi, eli asettaa anturi toisin päin.
@@ -72,7 +73,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
   else {
     LoadCell.setCalFactor(calibrationValue);
     lcdFunc(lcd, 255,255,"");
-    lcdFunc(lcd, 0, 0, "Kaynnistys");
+    lcdFunc(lcd, 0, 0, "Käynnistys");
     lcdFunc(lcd, 0, 1, "valmis");
     taaraus = false;
     delay(3000);
@@ -93,18 +94,34 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
       if (LoadCell.getData() < 0){  //kun < 0, niin antaa vasemman pakaran paineen
         int i = (-weight/2 + LoadCell.getData()) * pressure;  //Elohopeamillimetrien laskukaava vasemmanpuoleiselle anturille. Huom. etumerkki, jotta saadaan positiivinen lukema.
         lcdFunc(lcd, 255,255,"");
-        lcdFunc(lcd, 0, 0, "Vasen pakara");
-        lcdFunc(lcd, 0, 1, "mmHg: "); //Vaihdoin tässä kokonaislukuna tulevan int i -muuttujan ja "mmHg" -tekstiosan paikat, jotta lcdFunc -toimii oikein ja mahdollisimman pienellä säädöllä
+
+        lcdFunc(lcd, 0, 0, "Vasen:");
+        lcd.setCursor(7, 0);
         lcd.print(-i);
+        lcdFunc(lcd, 11, 0, "mmHg");
+
+        lcdFunc(lcd, 0, 1, "Kosteus:");
+        lcd.setCursor(9, 1);
+        // FIXME kosteuden ilmaisin tähän
+        lcdFunc(lcd, 12, 1, "%");
+
         newDataReady = 0;
         t = millis();
       }        
       else {  //kun > 0, niin antaa oikean pakaran paineen
         int i = (weight/2 + LoadCell.getData()) * pressure; //Elohopeamillimetrien laskukaava oikeanpuoleiselle anturille.
         lcdFunc(lcd, 255,255,"");
-        lcdFunc(lcd, 0, 0, "Oikea pakara");
-        lcdFunc(lcd, 0, 1, "mmHg: ");
+        
+        lcdFunc(lcd, 0, 0, "Oikea:");
+        lcd.setCursor(7, 0);
         lcd.print(i);
+        lcdFunc(lcd, 11, 0, "mmHg");
+
+        lcdFunc(lcd, 0, 1, "Kosteus:");
+        lcd.setCursor(9, 1);
+        // FIXME kosteuden ilmaisin tähän
+        lcdFunc(lcd, 12, 1, "%");
+
         newDataReady = 0;
         t = millis();
         }        

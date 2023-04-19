@@ -95,11 +95,11 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
 
       if (LoadCell.getData() < 0){  //kun < 0, niin antaa vasemman pakaran paineen
         int i = (-weight/2 + LoadCell.getData()) * pressure;  //Elohopeamillimetrien laskukaava vasemmanpuoleiselle anturille. Huom. etumerkki, jotta saadaan positiivinen lukema.
-        String paine = String(-i);
+        String paine = String(-i); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
 
         lcdFunc(lcd, 0, 0, "Vasen:");
-        lcdFunc(lcd, 7, 0, paine); //print here
+        lcdFunc(lcd, 7, 0, paine); 
         lcdFunc(lcd, 11, 0, "mmHg");
         
         lcdFunc(lcd, 0, 1, "Kosteus:");
@@ -112,7 +112,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
       }        
       else {  //kun > 0, niin antaa oikean pakaran paineen
         int i = (weight/2 + LoadCell.getData()) * pressure; //Elohopeamillimetrien laskukaava oikeanpuoleiselle anturille.
-        String paine = String(i);
+        String paine = String(i); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
         
         lcdFunc(lcd, 0, 0, "Oikea:");

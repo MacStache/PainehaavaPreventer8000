@@ -2,8 +2,10 @@
 
 // Määritetään custom-merkit ääkkösille. Luodaan kaksiulotteinen taulukko, jossa on neljä riviä ja yhdellä rivillä on aina kahdeksan saraketta (LCD-näytössä on 8-riviä, joita nuo sarakkeet ohjaavat).
 // Noihin kahdeksaan sarakkeeseen on määritelty kunkin ääkkösen kirjoitusasu siten, että 0 tarkoittaa LCD-näytöllä tyhjää pikseliä ja 1 tarkoittaa näytöllä täytettyä pikseliä.
+// Kirjainten muodostamiseen käytetään vain 7 saraketta, koska kahdeksas ohjaa kirjaimen alapuolelle tulevaa lisäriviä, jota voisi käyttää esim. alleviivaukseen.
 // Tässä koodissa custom-merkkitaulukon rivien sarakkeet on kirjoitettu allekkain koodin tulkinnan helpottamiseksi.
 // Käytännössä kirjaimen määrittäminen onnistuisi myös (ja olisi koodirivien vähentämisenkin kannalta suotavaa) näin: {B01010,B00000,B01110,B00001,B01111,B10001,B01111}, joka vastaa ä-kirjainta.
+// Voidaan valmiiseen koodiin korjata tarvittaessa tuohon muotoon.
 
 byte customChars[4][8] ={
   // ä:

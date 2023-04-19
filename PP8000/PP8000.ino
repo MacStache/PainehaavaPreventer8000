@@ -97,15 +97,8 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
         int i = (-weight/2 + LoadCell.getData()) * pressure;  //Elohopeamillimetrien laskukaava vasemmanpuoleiselle anturille. Huom. etumerkki, jotta saadaan positiivinen lukema.
         String paine = String(-i); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
-
-        lcdFunc(lcd, 0, 0, "Vasen:");
-        lcdFunc(lcd, 7, 0, paine); 
-        lcdFunc(lcd, 11, 0, "mmHg");
-        
-        lcdFunc(lcd, 0, 1, "Kosteus:");
-        lcd.setCursor(9, 1);
-        // FIXME kosteuden ilmaisin tähän
-        lcdFunc(lcd, 12, 1, "%");
+        lcdFunc(lcd, 0, 0, "Vasen: " + paine + " mmHg"); //tulostetaan stringit näytölle
+        lcdFunc(lcd, 0, 1, "Kosteus:" + "FIXME" + " %"); // FIXME kosteuden ilmaisin tähän
 
         newDataReady = 0;
         t = millis();
@@ -114,15 +107,8 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
         int i = (weight/2 + LoadCell.getData()) * pressure; //Elohopeamillimetrien laskukaava oikeanpuoleiselle anturille.
         String paine = String(i); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
-        
-        lcdFunc(lcd, 0, 0, "Oikea:");
-        lcdFunc(lcd, 7, 0, paine);
-        lcdFunc(lcd, 11, 0, "mmHg");
-
-        lcdFunc(lcd, 0, 1, "Kosteus:");
-        lcd.setCursor(9, 1);
-        // FIXME kosteuden ilmaisin tähän
-        lcdFunc(lcd, 12, 1, "%");
+        lcdFunc(lcd, 0, 0, "Oikea: " + paine + " mmHg"); //tulostetaan stringit näytölle
+        lcdFunc(lcd, 0, 1, "Kosteus: " + "FIXME" + " %"); // FIXME kosteuden ilmaisin tähän
 
         newDataReady = 0;
         t = millis();

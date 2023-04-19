@@ -27,9 +27,9 @@ const int calVal_eepromAdress = 0; //Asetetaan EEPROM-osoitteeksi 0. EEPROM = El
 unsigned long t = 0;
 
 //Mittaukseen liittyvät muuttujat
-float pressure = 9.81/(0.1*0.1)/133.322;  //paineen laskukaava elohopeamillimetreinä (10x10cm pinta-alalla)
-float weight = 100;  //käyttäjän paino muuttujana: Henkilöity 100 kiloiselle käyttäjälle
-float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan tarpeeseen, jos ei toimi samalla arvolla, weight pitää nollata, jos tarvii kalibroida!
+const float pressure = 9.81/(0.1*0.1)/133.322;  //paineen laskukaava elohopeamillimetreinä (10x10cm pinta-alalla)
+const float weight = 100;  //käyttäjän paino muuttujana: Henkilöity 100 kiloiselle käyttäjälle
+const float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan tarpeeseen, jos ei toimi samalla arvolla, weight pitää nollata, jos tarvii kalibroida!
 
 
 LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit. 
@@ -61,6 +61,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
   //anturien taaraus
   LoadCell.start(stabilizingtime, _tare);
   if (LoadCell.getTareTimeoutFlag() || LoadCell.getSignalTimeoutFlag()) {
+    errorSound();
     lcdFunc(lcd, 255,255,"");
     lcdFunc(lcd, 0, 0, "Aikakatkaisu");
     lcdFunc(lcd, 0, 1, "Tarkista johdot");
@@ -75,6 +76,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
     lcdFunc(lcd, 255,255,"");
     lcdFunc(lcd, 0, 0, "Käynnistys");
     lcdFunc(lcd, 0, 1, "valmis");
+    startUpSound(); 
     taaraus = false;
     delay(3000);
   }

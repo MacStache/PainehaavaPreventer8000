@@ -13,7 +13,7 @@ bool mittaus = false;
 bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
-const unsigned long Interval = 18000; //FIXME, toimiiko oikein paine-eron kanssa? //no weight wait period // aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
+const unsigned long Interval = 18000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
 
 float humidity; //TODO // koodi puuttuu
 
@@ -30,6 +30,14 @@ unsigned long t = 0;
 //Mittaukseen liittyvät muuttujat
 const float pressure = 9.81/(0.1*0.1)/133.322;  //paineen laskukaava elohopeamillimetreinä (10x10cm pinta-alalla)
 const float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan tarpeeseen, jos ei toimi samalla arvolla, weight pitää nollata, jos tarvii kalibroida!
+
+float leftPressure = 0.00; // Alustetaan muuttuja
+float rightPressure = 0.00; // Alustetaan muuttuja
+float WEIGHT_THRESHOLD = 0.00;
+
+enum States {
+  WAIT_FOR_WEIGHT, WAIT_FOR_ALARM, RESET_WAIT
+} state = WAIT_FOR_WEIGHT;
 
 LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit. 
                                 //Portit 1-2 on tarkoitettu R/S (Register Select) ja E (Enable) porteille ja 3-6 porteille joista syötetään bittejä näytölle.
@@ -75,7 +83,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
     lcdFunc(lcd, 255,255,"");
     lcdFunc(lcd, 0, 0, "Käynnistys");
     lcdFunc(lcd, 0, 1, "valmis");
-    //startUpSound(); // Kommentoitu pois testivaiheessa
+    startUpSound();
     taaraus = false;
     delay(3000);
   }
@@ -92,9 +100,9 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
   if (newDataReady) {
     
     // Määritellään paine-muuttujat newDataReadyn jälkeen, jotta LoadCell.getData saa päivitetyt arvot
-    const int leftPressure = (-weight/2 + LoadCell.getData()) * -pressure; // Vasemman puolen paine elohopeamillimetreinä (-weight ja -pressure, jotta saadaan tulostumaan positiivinen paine LCD-näytölle)
-    const int rightPressure = (weight/2 + LoadCell.getData()) * pressure; // Oikean puolen paine elohopeamillimetreinä
-    const int WEIGHT_THRESHOLD = (leftPressure + rightPressure) / 2 + 10; // Siirretty #definestä tähän, koska muuttuu käyttäjän painon mukaan. Viimeistä lukua muuttamalla voidaan säätää paineen huomioimisen aloitusrajaa.
+    leftPressure = (-weight/2 + LoadCell.getData()) * -pressure; // Vasemman puolen paine elohopeamillimetreinä (-weight ja -pressure, jotta saadaan tulostumaan positiivinen paine LCD-näytölle)
+    rightPressure = (weight/2 + LoadCell.getData()) * pressure; // Oikean puolen paine elohopeamillimetreinä
+    WEIGHT_THRESHOLD = (leftPressure + rightPressure) / 2 + 10; // Siirretty #definestä tähän, koska muuttuu käyttäjän painon mukaan. Viimeistä lukua muuttamalla voidaan säätää paineen huomioimisen aloitusrajaa.
 
     if (millis() > t + serialPrintInterval) {
 
@@ -102,7 +110,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
 
         String paine = String(leftPressure); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
-        lcdFunc(lcd, 0, 0, "Vasen: " + paine + " mmHg"); //tulostetaan stringit näytölle
+        lcdFunc(lcd, 0, 0, "Vasen: " + paine + " mmHg")("%.0f", leftPressure); //tulostetaan stringit näytölle
         lcdFunc(lcd, 0, 1, "Kosteus: " /*+ "FIXME" +*/ " %"); // FIXME kosteuden ilmaisin tähän
         
         //Serial.print("Oikea paine: "); // DEBUG Poista tämä kun ei enää tarvita
@@ -126,62 +134,45 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
         }        
     }
 
-    enum States {
-      WAIT_FOR_WEIGHT, WAIT_FIRST_ALARM, WAIT_SEC_ALARM, WAIT_THIRD_ALARM, RESET_WAIT
-    } state = WAIT_FOR_WEIGHT;
-
-      switch (state) //tassa odotellaan halytysta tapahtuvaksi
+if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
+      switch (state) 
       {
         case WAIT_FOR_WEIGHT:
-          if( leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) //jos sensoreille asetettu paino ylittaa maaritellyn painorajan, niin
-          {
-            //Serial.println("Mennäänkö tähän ehtoon?"); // DEBUG Poista tämä kun ei enää tarvita
-            StartTime = millis();  // aikalaskuri alkaa mitata ja tallentaa aikaa
-            state = WAIT_FIRST_ALARM; WAIT_SEC_ALARM; WAIT_THIRD_ALARM; //odotellaan halytyksia
-          }
+            StartTime = millis();  // timeri alkaa mitata ja tallentaa aikaa
+            state = WAIT_FOR_ALARM; //odotellaan hälytystä
           break;
 
-        case WAIT_FIRST_ALARM: //ensimmainen halytystapaus
-          if(millis() - StartTime >= BREAKREMINDER) //aikalaskuri ylittaa 2 tunnin maaraajan
+        case WAIT_FOR_ALARM:
+          if(millis() - StartTime >= BREAKREMINDER) //timeri ylittää 2 tunnin määräajan
           {
-            startUpSound();
             alarm = true;
-            SetupAlarm(); //funktiota kutsutaan
-            StartTime = millis();  //aletaan mitata ja tallentaa aikaa
-            state = RESET_WAIT;  // odotetaan etta paino saadaan uudelleen sensoreille
+            setupAlarm(); //funktiota kutsutaan
+            state = RESET_WAIT;  // odotetaan etta paine saadaan uudelleen sensoreille
           }
-          break;
-
-        case WAIT_SEC_ALARM:
-          if((millis() - StartTime >= BREAKREMINDER) || (rightPressure >= 760))//FIXME: paine maariteltava //aika ylittaa 2h TAI paine kasvaa liian suureksi
-          {
-            startUpSound();
-            alarm = true;
-            SetupAlarm(); //funktiota kutsutaan
-            StartTime = millis();  // aletaan mitata ja tallentaa aikaa
-            state = RESET_WAIT; //odotetaan etta paino saadaan uudelleen sensoreille
-          } 
-          break;
-    
-        case WAIT_THIRD_ALARM:
-          if((millis() - StartTime >= BREAKREMINDER) || (humidity>= 5000)) //TODO: kosteusanturin koodi puuttuu // aika ylittaa 2h TAI kosteus nousee liian suureksi
+          if(rightPressure >= 760 || leftPressure>=760)
           {
             alarm = true;
-            SetupAlarm(); //funktiota kutsutaan
-            StartTime = millis(); //aletaan mitata ja tallentaa aikaa
-            state = RESET_WAIT; //odotetaan etta paino saadaan uudelleen sensoreille
+            setupAlarm(); 
+            state = RESET_WAIT;  
+          }
+          if(humidity >= 5000)
+          {
+            alarm = true;
+            setupAlarm(); 
+            state = RESET_WAIT; 
           }
           break;
 
         case RESET_WAIT:
-          if (millis() - StartTime > Interval) {
+          if (millis() - StartTime > Interval) { //odotetaan 3 min ennen timerin uudelleen käynnistymistä
+            noInterrupts(); //stopataan timeri
+            timer0_millis = 0;
+            interrupts();
+            StartTime = 0;
             state = WAIT_FOR_WEIGHT;  // resetoidaan tila ja odotetaan uutta painoa
-            // tahan voi tuoda lisaa caseja tarvittaessa
           }
           break;
-        }
-      }
+     }
+  }
 }
 
-// 'enum' (enumeration) on helppo tapa antaa arvoille/numeroille uniikkeja nimia 
-// joiden arvoilla ei ole valia niin kauan kuin nimet ovat uniikkeja:

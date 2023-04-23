@@ -1,9 +1,15 @@
-#include <HX711_ADC.h> //HX711 vahvistimen kirjaston header
+#include <HX711_ADC.h> //HX711 vahvistimen kirjasto
 #include <LiquidCrystal.h> //LCD-näytön kirjasto
 #include <SparkFun_HIH4030.h> //kosteusanturin kirjasto (ei HR202, mutta yhteensopiva)
 #include <Wire.h> //kosteusanturin lämpötilakirjasto
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
+
+//kosteusanturin määrittelyt
+#define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
+#define HIH4030_SUPPLY 5 //Paljonko virtaa sensori ottaa (volttia)
+
+HIH4030 sensorSpecs(HIH4030_OUT, HIH4030_SUPPLY); //asetetaan edelliset arvot kirjaston käyttöön
 
 #define BREAKREMINDER 36000000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
@@ -14,14 +20,10 @@ bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
 const unsigned long Interval = 18000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
 
-//kosteusanturin määrittelyt
-#define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
-#define HIH4030_SUPPLY 5 //Paljonko virtaa sensori ottaa (volttia)
-HIH4030 sensorSpecs(HIH4030_OUT, HIH4030_SUPPLY); //asetetaan edelliset arvot kirjaston käyttöön
-
 //pinnit:
 const int HX711_dout = 10; //mcu > HX711 dout pinni
 const int HX711_sck = 11; //mcu > HX711 sck pinni
+int sensorPin = A0; //kosteusanturin signaalipinni
 
 //HX711 määrittely:
 HX711_ADC LoadCell(HX711_dout, HX711_sck); //LoadCell() saa tietonsa HX711_dout ja _sck pinneistä
@@ -36,6 +38,7 @@ const float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan ta
 float leftPressure = 0.00; // Alustetaan muuttuja
 float rightPressure = 0.00; // Alustetaan muuttuja
 float WEIGHT_THRESHOLD = 0.00;
+int sensorValue = 0; // alusta kosteusanturin lukema
 
 enum States {
   WAIT_FOR_WEIGHT, WAIT_FOR_ALARM, RESET_WAIT
@@ -48,14 +51,13 @@ LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit.
 
 void setup() {
 
-Serial.begin(9600); // DEBUG Poista tämä kun ei enää tarvita
+//Serial.begin(9600); // DEBUG Poista tämä kun ei enää tarvita
 lcd.begin(16,2); // Määritellään LCD-näytön koko
 createCustomChars(lcd); //luodaan ääkköset
 Wire.begin(); //kosteusanturin lämpötilamittarin käynnistys
 }
 
 void loop() {
-  
 
 while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus" -kytkimen asento on true
                           //Siirsin tämän osan koodia setupista loopin alkuun.
@@ -93,8 +95,8 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
   }
 }
 
-  bool mittaus = true; //mittaus käyntiin
-  static boolean newDataReady = 0; //uuden anturidatan alustus
+  bool mittaus = true;
+  static boolean newDataReady = 0; 
   const int serialPrintInterval = 1000; //Syötteen tulostuksen nopeuden määritys. Korkeampi on hitaampi.
 
   // Tarkistetaan uusi data

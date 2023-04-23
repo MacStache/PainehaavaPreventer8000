@@ -1,10 +1,11 @@
 #include <HX711_ADC.h> //HX711 vahvistimen kirjaston header
 #include <LiquidCrystal.h>
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
+#include <DHT.h> //kosteusanturin kirjasto
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
 
 //#include <EEPROM.h> //EEPROM -kirjaston header Tätä ei välttämättä tarvita?!?
-
+#define HR202_PIN 0 // määrittää kosteusanturin signaalipinnin
 #define BREAKREMINDER 36000000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
 const float weight = 100;  // Käyttäjän paino: muutetaan manuaalisesti käyttäjäkohtaisesti, koska anturit eivät pysty mittaamaan massaa tässä laitteessa näillä komponenteilla
@@ -15,11 +16,11 @@ bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
 const unsigned long Interval = 18000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
 
-float humidity; //TODO // koodi puuttuu
-
 //pinnit:
 const int HX711_dout = 10; //mcu > HX711 dout pinni
 const int HX711_sck = 11; //mcu > HX711 sck pinni
+int sensorPin = A0; //kosteusanturin signaalipinni
+
 
 //HX711 määrittely:
 HX711_ADC LoadCell(HX711_dout, HX711_sck); //LoadCell() saa tietonsa HX711_dout ja _sck pinneistä
@@ -34,6 +35,7 @@ const float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan ta
 float leftPressure = 0.00; // Alustetaan muuttuja
 float rightPressure = 0.00; // Alustetaan muuttuja
 float WEIGHT_THRESHOLD = 0.00;
+int sensorValue = 0; // alusta kosteusanturin lukema
 
 enum States {
   WAIT_FOR_WEIGHT, WAIT_FOR_ALARM, RESET_WAIT
@@ -43,6 +45,24 @@ LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit.
                                 //Portit 1-2 on tarkoitettu R/S (Register Select) ja E (Enable) porteille ja 3-6 porteille joista syötetään bittejä näytölle.
                                 //R/S-portti on portti jonka kautta näytölle syötetään komentoja
                                 //E-portti on portti joka avaa rekisterin kirjoitusta varten
+
+//määritetään kosteusanturin anturityyppi
+static const uint8_t HR202{202}; 
+
+//kosteusanturin kalibrointi
+float humidity_to_voltage(float humidity) {
+  float voltage;
+  if (humidity >= 0 && humidity <= 10) {
+    voltage = 0.15 * humidity + 0.8;
+  } else if (humidity > 10 && humidity <= 40) {
+    voltage = 0.03 * humidity + 1.1;
+  } else if (humidity > 40 && humidity <= 80) {
+    voltage = 0.0375 * humidity + 0.7;
+  } else if (humidity > 80 && humidity <= 100) {
+    voltage = 0.0286 * humidity + 1.45;
+  }
+  return voltage;
+}
 
 void setup() {
 
@@ -88,7 +108,29 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
     delay(3000);
   }
 }
+  // Lue kosteusanturin arvo
+  float humidity = read_humidity();
 
+  // Tulosta arvo sarjaporttiin
+  Serial.print(F("Kosteus: "));
+  Serial.print(humidity);//tulostaa arvon
+  Serial.println(F("%"));
+
+  // Tarkista, onko kosteus alle hälytysrajan
+  if (humidity > ALARM_THRESHOLD) {
+    Serial.println(F("Kosteus on liian korkea!"));
+  }
+  delay(1000);
+}
+
+float read_humidity(void) {
+  // Lue kosteusanturin jännitearvo
+  int sensorValue = analogRead(HR202_PIN);
+  float voltage = sensorValue * (5.0 / 1023.0); // muuntaa ADC-lukema jännitteeksi
+  // Muunna jännite kosteudeksi käyttäen kalibrointikäyrää
+  float humidity = (voltage - 0.8) * 8.0;
+  return humidity;
+}
   bool mittaus = true;
   static boolean newDataReady = 0; 
   const int serialPrintInterval = 1000; //Syötteen tulostuksen nopeuden määritys. Korkeampi on hitaampi.

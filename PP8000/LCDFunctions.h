@@ -1,4 +1,6 @@
-#include <LiquidCrystal.h>
+float humidity = 0; //kosteusprosentin muuttuja
+int tempAddress = 0x48; //Lämpötilasensorin muistiosoite
+float temp = 0; //lämpötilamuuttuja, tätä tarvitaan todellisen kosteus% laskemisessa
 
 // Määritetään custom-merkit ääkkösille. Luodaan kaksiulotteinen taulukko, jossa on neljä riviä ja yhdellä rivillä on aina kahdeksan saraketta (LCD-näytössä on 8-riviä, joita nuo sarakkeet ohjaavat).
 // Noihin kahdeksaan sarakkeeseen on määritelty kunkin ääkkösen kirjoitusasu siten, että 0 tarkoittaa LCD-näytöllä tyhjää pikseliä ja 1 tarkoittaa näytöllä täytettyä pikseliä.
@@ -83,4 +85,8 @@ void lcdFunc(LiquidCrystal& lcd, uint8_t col, uint8_t row, String message) // LC
     }
     replaceCustomChars(&message); // Annetaan message-stringin osoite printString-pointterille, joka tuo ääkkösmuutokset stringiin
     lcd.print(message); // Tulostetaan lopullinen teksti LCD-näytölle korvattujen merkkien kanssa
+}
+
+void humidityCalc(HIH4030 sensor, float temperature){ //Alotietaan kosteuden laskenta ja luodaan lämpötilamuuttuja
+  humidity = sensor.getTrueRH(temperature); //luodaan humidity -muuttuja, jonka arvo otetaan kirjaston getTrueRH -funktiosta jolle syötetään lämpötila laskentaa varten
 }

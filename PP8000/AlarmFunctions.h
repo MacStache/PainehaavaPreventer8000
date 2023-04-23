@@ -18,7 +18,6 @@ void setupAlarm() {  //luodaan halytysfunktio
     noTone(buzzerPin); //maaritellaan tauko halytysten valiin  
     delay(1000);
   }while(i<3); //kun halytysten maaratty arvo on saavutettu poistutaan loopista
-  alarm = false; // ja halytyksen arvoksi tulee (=epatosi), tama koodi siis halyttaa kolmesti
 }
 
 void startUpSound() { 

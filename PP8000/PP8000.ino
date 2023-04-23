@@ -20,8 +20,6 @@ bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
 const unsigned long Interval = 180000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
 
-float humidity; //TODO // koodi puuttuu
-
 //pinnit:
 const int HX711_dout = 10; //mcu > HX711 dout pinni
 const int HX711_sck = 11; //mcu > HX711 sck pinni
@@ -115,8 +113,8 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
 
     if (millis() > t + serialPrintInterval) {
       if (LoadCell.getData() < 0) {  //kun < 0, niin antaa vasemman pakaran paineen
-        String paine = String(int)leftPressure)); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
-        String kosteus = String(humidity*-3); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String paine = String(int(leftPressure)); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String kosteus = String(int(humidity*-3)); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Vasen: " + paine + " mmHg"); //tulostetaan stringit näytölle
         lcdFunc(lcd, 0, 1, "Kosteus: " + kosteus + " %"); //tulostetaan stringit näytölle
@@ -124,8 +122,8 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
         t = millis();
       }        
       else {  //kun > 0, niin antaa oikean pakaran paineen
-
-        String paine = String(int)rightPressure)); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String paine = String(int(rightPressure)); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String kosteus = String(int(humidity*-3)); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Oikea: " + paine + " mmHg"); //tulostetaan stringit näytölle
         lcdFunc(lcd, 0, 1, "Kosteus: " + kosteus + " %"); //tulostetaan stringit näytölle
@@ -171,7 +169,7 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
             state = RESET_WAIT; 
           }
           break;
-
+        
         case BUTT_TIMEOUT:
           unassigned long butt_timer = 0;
           if(millis() - butt_timer >= 300000) {

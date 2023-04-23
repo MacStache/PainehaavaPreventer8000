@@ -1,15 +1,11 @@
-#include <HX711_ADC.h> //HX711 vahvistimen kirjasto
-#include <LiquidCrystal.h> //LCD-näytön kirjasto
-#include <SparkFun_HIH4030.h> //kosteusanturin kirjasto (ei HR202, mutta yhteensopiva)
-#include <Wire.h> //kosteusanturin lämpötilakirjasto
+#include <HX711_ADC.h> //HX711 vahvistimen kirjaston header
+#include <LiquidCrystal.h>
+#include <SparkFun_HIH4030.h>
+#include <Wire.h>
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
 
-//kosteusanturin määrittelyt
-#define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
-#define HIH4030_SUPPLY 5 //Paljonko virtaa sensori ottaa (volttia)
-
-HIH4030 sensorSpecs(HIH4030_OUT, HIH4030_SUPPLY); //asetetaan edelliset arvot kirjaston käyttöön
+//#include <EEPROM.h> //EEPROM -kirjaston header Tätä ei välttämättä tarvita?!?
 
 #define BREAKREMINDER 36000000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
@@ -18,12 +14,20 @@ bool mittaus = false;
 bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
-const unsigned long Interval = 18000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
+const unsigned long Interval = 18000; //FIXME, toimiiko oikein paine-eron kanssa? //no weight wait period // aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
+
+// Analog IO pinni kytketään A0:aan
+#define HIH4030_OUT A0
+
+// Paljonko virtaa sensori ottaa (volttia)
+#define HIH4030_SUPPLY 5
+
+// Kirjastoon liittyviä sensorispeksejä
+HIH4030 sensorSpecs(HIH4030_OUT, HIH4030_SUPPLY);
 
 //pinnit:
 const int HX711_dout = 10; //mcu > HX711 dout pinni
 const int HX711_sck = 11; //mcu > HX711 sck pinni
-int sensorPin = A0; //kosteusanturin signaalipinni
 
 //HX711 määrittely:
 HX711_ADC LoadCell(HX711_dout, HX711_sck); //LoadCell() saa tietonsa HX711_dout ja _sck pinneistä
@@ -58,6 +62,7 @@ Wire.begin(); //kosteusanturin lämpötilamittarin käynnistys
 }
 
 void loop() {
+  humidityCalc(sensorSpecs, temp);     //lähetetään laskurifunktiolle sensorin lukemat
 
 while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus" -kytkimen asento on true
                           //Siirsin tämän osan koodia setupista loopin alkuun.
@@ -104,7 +109,6 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
 
   // Haetaan pyöristetyt arvot datasetistä ja tulostetaan ne
   if (newDataReady) {
-    humidityCalc(sensorSpecs, temp); //lähetetään laskurifunktiolle kosteusanturin lukemat
 
     // Määritellään paine-muuttujat newDataReadyn jälkeen, jotta LoadCell.getData saa päivitetyt arvot
     leftPressure = (-weight/2 + LoadCell.getData()) * -pressure; // Vasemman puolen paine elohopeamillimetreinä (-weight ja -pressure, jotta saadaan tulostumaan positiivinen paine LCD-näytölle)

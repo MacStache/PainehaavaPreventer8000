@@ -1,21 +1,23 @@
 #include <HX711_ADC.h> //HX711 vahvistimen kirjaston header
-#include <LiquidCrystal.h>
+#include <LiquidCrystal.h> //LCD-näytön kirjasto
+#include <SparkFun_HIH4030.h> //kosteusanturin kirjasto (ei HR202, mutta yhteensopiva)
+#include <Wire.h> //kosteusanturin lämpötilakirjasto
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
-
-//#include <EEPROM.h> //EEPROM -kirjaston header Tätä ei välttämättä tarvita?!?
 
 #define BREAKREMINDER 36000000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
 const float weight = 100;  // Käyttäjän paino: muutetaan manuaalisesti käyttäjäkohtaisesti, koska anturit eivät pysty mittaamaan massaa tässä laitteessa näillä komponenteilla
-
 bool mittaus = false;
 bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
 const unsigned long Interval = 18000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
 
-float humidity; //TODO // koodi puuttuu
+//kosteusanturin määrittelyt
+#define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
+#define HIH4030_SUPPLY 5 //Paljonko virtaa sensori ottaa (volttia)
+HIH4030 sensorSpecs(HIH4030_OUT, HIH4030_SUPPLY); //asetetaan edelliset arvot kirjaston käyttöön
 
 //pinnit:
 const int HX711_dout = 10; //mcu > HX711 dout pinni
@@ -46,12 +48,14 @@ LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit.
 
 void setup() {
 
-//Serial.begin(9600); // DEBUG Poista tämä kun ei enää tarvita
+Serial.begin(9600); // DEBUG Poista tämä kun ei enää tarvita
 lcd.begin(16,2); // Määritellään LCD-näytön koko
-createCustomChars(lcd);
+createCustomChars(lcd); //luodaan ääkköset
+Wire.begin(); //kosteusanturin lämpötilamittarin käynnistys
 }
 
 void loop() {
+  
 
 while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus" -kytkimen asento on true
                           //Siirsin tämän osan koodia setupista loopin alkuun.
@@ -89,8 +93,8 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
   }
 }
 
-  bool mittaus = true;
-  static boolean newDataReady = 0; 
+  bool mittaus = true; //mittaus käyntiin
+  static boolean newDataReady = 0; //uuden anturidatan alustus
   const int serialPrintInterval = 1000; //Syötteen tulostuksen nopeuden määritys. Korkeampi on hitaampi.
 
   // Tarkistetaan uusi data
@@ -98,38 +102,30 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
 
   // Haetaan pyöristetyt arvot datasetistä ja tulostetaan ne
   if (newDataReady) {
-    
+    humidityCalc(sensorSpecs, temp); //lähetetään laskurifunktiolle kosteusanturin lukemat
+
     // Määritellään paine-muuttujat newDataReadyn jälkeen, jotta LoadCell.getData saa päivitetyt arvot
     leftPressure = (-weight/2 + LoadCell.getData()) * -pressure; // Vasemman puolen paine elohopeamillimetreinä (-weight ja -pressure, jotta saadaan tulostumaan positiivinen paine LCD-näytölle)
     rightPressure = (weight/2 + LoadCell.getData()) * pressure; // Oikean puolen paine elohopeamillimetreinä
     WEIGHT_THRESHOLD = (leftPressure + rightPressure) / 2 + 10; // Siirretty #definestä tähän, koska muuttuu käyttäjän painon mukaan. Viimeistä lukua muuttamalla voidaan säätää paineen huomioimisen aloitusrajaa.
 
     if (millis() > t + serialPrintInterval) {
-
       if (LoadCell.getData() < 0) {  //kun < 0, niin antaa vasemman pakaran paineen
-
         String paine = String(leftPressure); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String kosteus = String(humidity*-3); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
-        lcdFunc(lcd, 0, 0, "Vasen: " + paine + " mmHg")("%.0f", leftPressure); //tulostetaan stringit näytölle
-        lcdFunc(lcd, 0, 1, "Kosteus: " /*+ "FIXME" +*/ " %"); // FIXME kosteuden ilmaisin tähän
-        
-        //Serial.print("Oikea paine: "); // DEBUG Poista tämä kun ei enää tarvita
-        //Serial.println(rightPressure); // DEBUG Poista tämä kun ei enää tarvita
-
-        newDataReady = 0;
+        lcdFunc(lcd, 0, 0, "Vasen: " + paine + " mmHg"); //tulostetaan stringit näytölle
+        lcdFunc(lcd, 0, 1, "Kosteus: " + kosteus + " %"); //tulostetaan stringit näytölle
+        newDataReady = 0; //anturidatan nollaus uutta dataa varten
         t = millis();
       }        
       else {  //kun > 0, niin antaa oikean pakaran paineen
-
         String paine = String(rightPressure); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String kosteus = String(humidity*-3); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Oikea: " + paine + " mmHg"); //tulostetaan stringit näytölle
-        lcdFunc(lcd, 0, 1, "Kosteus: " /*+ "FIXME" +*/ " %"); // FIXME kosteuden ilmaisin tähän
-        
-        //Serial.print("Vasen paine: "); // DEBUG Poista tämä kun ei enää tarvita
-        //Serial.println(leftPressure); // DEBUG Poista tämä kun ei enää tarvita
-
-        newDataReady = 0;
+        lcdFunc(lcd, 0, 1, "Kosteus: " + kosteus + " %"); //tulostetaan stringit näytölle
+        newDataReady = 0; //anturidatan nollaus uutta dataa varten
         t = millis();
         }        
     }
@@ -166,7 +162,7 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
         case RESET_WAIT:
           if (millis() - StartTime > Interval) { //odotetaan 3 min ennen timerin uudelleen käynnistymistä
             noInterrupts(); //stopataan timeri
-            timer0_millis = 0;
+            //timer0_millis = 0;
             interrupts();
             StartTime = 0;
             state = WAIT_FOR_WEIGHT;  // resetoidaan tila ja odotetaan uutta painoa
@@ -174,5 +170,6 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
           break;
      }
   }
+}
 }
 

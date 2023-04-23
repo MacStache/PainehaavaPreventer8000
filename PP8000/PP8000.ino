@@ -4,6 +4,7 @@
 #include <Wire.h> //kosteusanturin lämpötilakirjasto
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
+#define BREAKREMINDER 36000000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
 //kosteusanturin määrittelyt
 #define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
@@ -11,16 +12,13 @@
 
 HIH4030 sensorSpecs(HIH4030_OUT, HIH4030_SUPPLY); //asetetaan edelliset arvot kirjaston käyttöön
 
-#define BREAKREMINDER 7200000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
 const float weight = 100;  // Käyttäjän paino: muutetaan manuaalisesti käyttäjäkohtaisesti, koska anturit eivät pysty mittaamaan massaa tässä laitteessa näillä komponenteilla
 bool mittaus = false;
 bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
-const unsigned long Interval = 180000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
-
-float humidity; //TODO // koodi puuttuu
+const unsigned long Interval = 18000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
 
 //pinnit:
 const int HX711_dout = 10; //mcu > HX711 dout pinni
@@ -41,6 +39,8 @@ float leftPressure = 0.00; // Alustetaan muuttuja
 float rightPressure = 0.00; // Alustetaan muuttuja
 float WEIGHT_THRESHOLD = 0.00;
 int sensorValue = 0; // alusta kosteusanturin lukema
+float humidity = 0.00;
+
 
 enum States {
   WAIT_FOR_WEIGHT, WAIT_FOR_ALARM, BUTT_TIMEOUT, RESET_WAIT
@@ -116,7 +116,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
     if (millis() > t + serialPrintInterval) {
       if (LoadCell.getData() < 0) {  //kun < 0, niin antaa vasemman pakaran paineen
         String paine = String(int)leftPressure)); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
-        String kosteus = String(humidity*-3); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String kosteus = String(int)humidity*-3)); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Vasen: " + paine + " mmHg"); //tulostetaan stringit näytölle
         lcdFunc(lcd, 0, 1, "Kosteus: " + kosteus + " %"); //tulostetaan stringit näytölle
@@ -124,8 +124,8 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
         t = millis();
       }        
       else {  //kun > 0, niin antaa oikean pakaran paineen
-
         String paine = String(int)rightPressure)); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String kosteus = String(int)humidity*-3)); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Oikea: " + paine + " mmHg"); //tulostetaan stringit näytölle
         lcdFunc(lcd, 0, 1, "Kosteus: " + kosteus + " %"); //tulostetaan stringit näytölle
@@ -134,7 +134,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
         }        
     }
 
-if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
+  if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
       switch (state) {
         case WAIT_FOR_WEIGHT:
             StartTime = millis();  // timeri alkaa mitata ja tallentaa aikaa
@@ -151,6 +151,11 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
             }
           }
           state = RESET_WAIT;  // odotetaan etta paine saadaan uudelleen sensoreille
+          if(millis() - StartTime >= BREAKREMINDER) //timeri ylittää 2 tunnin määräajan
+          {
+            alarm = true;
+            setupAlarm(); //funktiota kutsutaan
+            state = RESET_WAIT;  // odotetaan etta paine saadaan uudelleen sensoreille
           }
           if(rightPressure >= 760 || leftPressure>=760) {
             while(alarm) {
@@ -159,20 +164,19 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
                 alarm = false;
               }
             }
-            state = BUTT_TIMEOUT;  
-          }
+            state = BUTT_TIMEOUT; 
+          }  
           if(humidity >= 5000) { //TODO
             while(alarm) {
               setupAlarm(); //funktiota kutsutaan
               if (humidity <= 4999) { //TODO
                 alarm = false;
               }
-            } 
-            state = RESET_WAIT; 
+            }
           }
           break;
 
-        case BUTT_TIMEOUT:
+       case BUTT_TIMEOUT:
           unassigned long butt_timer = 0;
           if(millis() - butt_timer >= 300000) {
             StartTime = 0;
@@ -187,8 +191,7 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
             state = WAIT_FOR_WEIGHT;  // resetoidaan tila ja odotetaan uutta painoa
           }
           break;
-     }
+        }
+      }
+    }
   }
-}
-}
-

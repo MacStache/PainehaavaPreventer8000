@@ -28,7 +28,9 @@ Painehaava Preventer 8000 -laite koostuu tässä repositorissa olevan koodin lis
 Projekti käyttää seuraavia kirjastoja:
 
 HX711_ADC: https://github.com/olkal/HX711_ADC
+
 LiquidCrystal: https://github.com/arduino-libraries/LiquidCrystal
+
 SparkFun_HIH4030: https://github.com/sparkfun/SparkFun_HIH4030_Arduino_Library
 
 /*******************************************************/

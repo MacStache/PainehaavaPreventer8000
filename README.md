@@ -39,5 +39,11 @@ Kaikkien ryhmän jäsenten tehtävänä on ollut tuottaa siihen koodia Arduinon 
 
 Projektiryhmään kuuluvat (aakkosjärjestyksessä):
 
-Lotta Hautamaa, Pasi Honka, Henri Laukka, Sanna Mäki
+Lotta Hautamaa (https://github.com/Lottalinaaa/)
+
+Pasi Honka (https://github.com/Rapuska/)
+
+Henri Laukka (https://github.com/MacStache/)
+
+Sanna Mäki (https://github.com/rahukettu/)
 

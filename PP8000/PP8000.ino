@@ -4,6 +4,7 @@
 #include <Wire.h> //kosteusanturin lämpötilakirjasto
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
+#define BREAKREMINDER 36000000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
 //kosteusanturin määrittelyt
 #define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
@@ -39,6 +40,8 @@ float leftPressure = 0.00; // Alustetaan muuttuja
 float rightPressure = 0.00; // Alustetaan muuttuja
 float WEIGHT_THRESHOLD = 0.00;
 int sensorValue = 0; // alusta kosteusanturin lukema
+float humidity = 0.00;
+
 
 enum States {
   WAIT_FOR_WEIGHT, WAIT_FOR_ALARM, BUTT_TIMEOUT, RESET_WAIT

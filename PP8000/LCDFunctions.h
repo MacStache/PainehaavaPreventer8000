@@ -1,4 +1,4 @@
-float humidity = 0; //kosteusprosentin muuttuja
+float humidity = 0.00; //kosteusprosentin muuttuja
 int tempAddress = 0x48; //Lämpötilasensorin muistiosoite
 float temp = 0; //lämpötilamuuttuja, tätä tarvitaan todellisen kosteus% laskemisessa
 

@@ -40,7 +40,7 @@ float leftPressure = 0.00; // Alustetaan muuttuja
 float rightPressure = 0.00; // Alustetaan muuttuja
 float WEIGHT_THRESHOLD = 0.00;
 int sensorValue = 0; // alusta kosteusanturin lukema
-float humidity = 0.00;
+//float humidity = 0.00; // FIXME. Oli määritelty kahdessa paikkaa. Jätetty LCDFunktioihin, koska ei muuten kääntynyt.
 
 
 enum States {
@@ -150,8 +150,7 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
                 alarm = false;
               }
             }
-          }
-          state = RESET_WAIT;  // odotetaan etta paine saadaan uudelleen sensoreille
+            state = RESET_WAIT;  // odotetaan etta paine saadaan uudelleen sensoreille
           }
           if(rightPressure >= 760 || leftPressure>=760) {
             while(alarm) {
@@ -168,13 +167,13 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
               if (humidity <= 4999) { //TODO
                 alarm = false;
               }
-            } 
+            }
             state = RESET_WAIT; 
           }
           break;
         
         case BUTT_TIMEOUT:
-          unassigned long butt_timer = 0;
+          unsigned long butt_timer = 0;
           if(millis() - butt_timer >= 300000) {
             StartTime = 0;
             state = WAIT_FOR_ALARM;
@@ -188,7 +187,8 @@ if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
             state = WAIT_FOR_WEIGHT;  // resetoidaan tila ja odotetaan uutta painoa
           }
           break;
-     }
+      }
+    }
   }
 }
-}
+

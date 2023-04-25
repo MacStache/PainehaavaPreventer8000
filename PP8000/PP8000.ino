@@ -4,15 +4,13 @@
 #include <Wire.h> //kosteusanturin lämpötilakirjasto
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
-#define BREAKREMINDER 36000000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
+#define BREAKREMINDER 7200000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
 //kosteusanturin määrittelyt
 #define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
 #define HIH4030_SUPPLY 5 //Paljonko virtaa sensori ottaa (volttia)
 
 HIH4030 sensorSpecs(HIH4030_OUT, HIH4030_SUPPLY); //asetetaan edelliset arvot kirjaston käyttöön
-
-#define BREAKREMINDER 7200000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
 
 const float weight = 100;  // Käyttäjän paino: muutetaan manuaalisesti käyttäjäkohtaisesti, koska anturit eivät pysty mittaamaan massaa tässä laitteessa näillä komponenteilla
 bool mittaus = false;

@@ -17,12 +17,12 @@ void setupAlarm() {  //luodaan halytysfunktio
     delay(1000);
     noTone(buzzerPin); //maaritellaan tauko halytysten valiin  
     delay(1000);
-  }while(i<3); //kun halytysten maaratty arvo on saavutettu poistutaan loopista
+  }while(i<1); //kun halytysten maaratty arvo on saavutettu poistutaan loopista
 }
 
 void startUpSound() { 
   int j = 0;
-  int noteDurations[] ={4,4,4,4}; // 8=kahdeksasosanuotti, 4=neljäsosanuotti jne.
+  int noteDurations[] ={8,8,8,2}; // 8=kahdeksasosanuotti, 4=neljäsosanuotti jne.
   int notes[]={
     NOTE_4, NOTE_3, NOTE_2, NOTE_1 //melodian nuottitaulukko, määritelty definessä
   };
@@ -36,11 +36,11 @@ void startUpSound() {
 
 void errorSound() {
   int k = 0;
-  int noteDurations[] ={8,8,8,8,3,2}; // 8=kahdeksasosanuotti, 4=neljäsosanuotti jne.
+  int noteDurations[] ={4,4,4}; // 8=kahdeksasosanuotti, 4=neljäsosanuotti jne.
   int notes[]={
-    NOTE_1, NOTE_2, NOTE_3, NOTE_4, 0, NOTE_4 //melodian nuottitaulukko, määritelty definessä
+    NOTE_4, NOTE_4, NOTE_4 //melodian nuottitaulukko, määritelty definessä
   };
-  for (k = 0; k<6;k++) {
+  for (k = 0; k<3;k++) {
     int noteDuration = 800 / noteDurations[k];
     int pauseBetweenNotes = noteDuration*1.30; //nuottien välinen vähimmäistauko
     tone(12, notes[k], noteDuration);

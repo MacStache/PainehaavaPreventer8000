@@ -4,7 +4,7 @@
 #include <Wire.h> //kosteusanturin lämpötilakirjasto
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
-#define BREAKREMINDER 7200000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton 
+#define BREAKREMINDER 10000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton                       ///////////////////// 7200000
 
 //kosteusanturin määrittelyt
 #define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
@@ -12,12 +12,12 @@
 
 HIH4030 sensorSpecs(HIH4030_OUT, HIH4030_SUPPLY); //asetetaan edelliset arvot kirjaston käyttöön
 
-const float weight = 100;  // Käyttäjän paino: muutetaan manuaalisesti käyttäjäkohtaisesti, koska anturit eivät pysty mittaamaan massaa tässä laitteessa näillä komponenteilla
+float weight = 100.00;  // Käyttäjän paino: muutetaan manuaalisesti käyttäjäkohtaisesti, koska anturit eivät pysty mittaamaan massaa tässä laitteessa näillä komponenteilla
 bool mittaus = false;
 bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
-const unsigned long Interval = 180000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille 
+const unsigned long Interval = 10000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille                     ///////////////////// 180000
 
 //pinnit:
 const int HX711_dout = 10; //mcu > HX711 dout pinni
@@ -32,7 +32,7 @@ unsigned long t = 0;
 
 //Mittaukseen liittyvät muuttujat
 const float pressure = 9.81/(0.1*0.1)/133.322;  //paineen laskukaava elohopeamillimetreinä (10x10cm pinta-alalla)
-const float calibrationValue = 22500;   //Kalibrointimuuttuja: säädä omaan tarpeeseen, jos ei toimi samalla arvolla, weight pitää nollata, jos tarvii kalibroida!
+const float calibrationValue = 22500.00;   //Kalibrointimuuttuja: säädä omaan tarpeeseen, jos ei toimi samalla arvolla, weight pitää nollata, jos tarvii kalibroida!
 
 float leftPressure = 0.00; // Alustetaan muuttuja
 float rightPressure = 0.00; // Alustetaan muuttuja
@@ -52,7 +52,7 @@ LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit.
 
 void setup() {
 
-//Serial.begin(9600); // DEBUG Poista tämä kun ei enää tarvita
+Serial.begin(9600); // DEBUG Poista tämä kun ei enää tarvita
 lcd.begin(16,2); // Määritellään LCD-näytön koko
 createCustomChars(lcd); //luodaan ääkköset
 Wire.begin(); //kosteusanturin lämpötilamittarin käynnistys
@@ -134,59 +134,102 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
     }
 
 if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
-      switch (state) {
-        case WAIT_FOR_WEIGHT:
-            StartTime = millis();  // timeri alkaa mitata ja tallentaa aikaa
-            state = WAIT_FOR_ALARM; //odotellaan hälytystä
-          break;
 
-        case WAIT_FOR_ALARM:
-          if(millis() - StartTime >= BREAKREMINDER) { //timeri ylittää 2 tunnin määräajan
-            while(alarm) {
-              setupAlarm(); //funktiota kutsutaan
-              if (leftPressure < WEIGHT_THRESHOLD || rightPressure < WEIGHT_THRESHOLD) {
-                alarm = false;
-              }
-            }
-            state = RESET_WAIT;  // odotetaan etta paine saadaan uudelleen sensoreille
-          }
-          if(rightPressure >= 760 || leftPressure>=760) {
-            while(alarm) {
-              setupAlarm(); //funktiota kutsutaan
-              if (leftPressure < WEIGHT_THRESHOLD || rightPressure < WEIGHT_THRESHOLD) {
-                alarm = false;
-              }
-            }
-            state = BUTT_TIMEOUT;  
-          }
-          if(humidity >= 5000) { //TODO
-            while(alarm) {
-              setupAlarm(); //funktiota kutsutaan
-              if (humidity <= 4999) { //TODO
-                alarm = false;
-              }
-            }
-            state = RESET_WAIT; 
-          }
-          break;
-        
-        case BUTT_TIMEOUT:
-          unsigned long butt_timer = 0;
-          if(millis() - butt_timer >= 300000) {
-            StartTime = 0;
-            state = WAIT_FOR_ALARM;
-          }
-          break;
 
-        case RESET_WAIT:
-          if (millis() - StartTime > Interval) { //odotetaan 3 min ennen timerin uudelleen käynnistymistä
-            StartTime = 0;
-            alarm = true;
-            state = WAIT_FOR_WEIGHT;  // resetoidaan tila ja odotetaan uutta painoa
-          }
-          break;
+
+ switch(state)
+ 
+  {
+    Serial.println("Switchiin");
+    case WAIT_FOR_WEIGHT:
+    Serial.println("WAIT_FOR_WEIGHT 1");
+
+      StartTime = millis();  // timeri alkaa mitata ja tallentaa aikaa
+      Serial.println("WAIT_FOR_WEIGHT 2");
+      state = WAIT_FOR_ALARM; //odotellaan hälytystä
+      Serial.println("WAIT_FOR_WEIGHT break");
+      break;
+    
+    case WAIT_FOR_ALARM:
+    Serial.println("WAIT_FOR_ALARM");
+    if(millis() - StartTime >= BREAKREMINDER) { //timeri ylittää 2 tunnin määräajan
+      Serial.println("BREAKREMINDER 1");
+      alarm = true;
+      Serial.println("BREAKREMINDER 2");
+      if(alarm == true) {
+        Serial.println("BREAKREMINDER 3");
+        setupAlarm(); //funktiota kutsutaan
+        Serial.println("BREAKREMINDER 4");
       }
-    }
+      if (leftPressure < WEIGHT_THRESHOLD && rightPressure < WEIGHT_THRESHOLD) {
+        Serial.println("BREAKREMINDER 5");
+        alarm = false;
+        Serial.println("BREAKREMINDER 6");
+        state = RESET_WAIT;
+      }
+    } 
+    else if(rightPressure >= 400 || leftPressure >= 400) {
+        Serial.println("YLIPAINE 1");
+        alarm = true;
+        Serial.println("YLIPAINE 2");
+        if(alarm == true) {
+          Serial.println("YLIPAINE 3");
+          setupAlarm(); //funktiota kutsutaan
+          Serial.println("YLIPAINE 4");
+        }
+        if (leftPressure < WEIGHT_THRESHOLD && rightPressure < WEIGHT_THRESHOLD) {
+          Serial.println("YLIPAINE 5");
+          alarm = false;
+          Serial.println("YLIPAINE 6");
+          state = BUTT_TIMEOUT;
+        }
+      }
+      else if(humidity >= 65.00) { //TODO 40.00
+            Serial.println("HUMIDITY 1");
+            alarm = true;
+            Serial.println("HUMIDITY 2");
+            if(alarm == true) {
+              Serial.println("HUMIDITY 3");
+              setupAlarm(); }
+              Serial.println("HUMIDITY 4");
+              if (humidity <= 64.00) { //TODO 39.00
+                Serial.println("HUMIDITY 5");
+                alarm = false;
+                Serial.println("HUMIDITY 6");
+                state = RESET_WAIT;
+              }
+      }              
+      Serial.println("WAIT_FOR_ALARM break");
+      break;
+
+    case RESET_WAIT:
+    Serial.println("RESET_WAIT 1");
+        if (millis() - StartTime > Interval) { //odotetaan 3 min ennen timerin uudelleen käynnistymistä
+          Serial.println("RESET_WAIT 2");
+          StartTime = 0;
+          Serial.println("RESET_WAIT 3");
+          alarm = true;
+          Serial.println("RESET_WAIT 4");
+          state = WAIT_FOR_WEIGHT;  // resetoidaan tila ja odotetaan uutta painoa
+          Serial.println("RESET_WAIT 5");
+        }
+        Serial.println("RESET_WAIT break");
+        break;
+      
+    case BUTT_TIMEOUT:
+        Serial.println("BUTT_TIMEOUT 1");              
+        unsigned long butt_timer = 0;
+        Serial.println("BUTT_TIMEOUT 2");              
+        if(millis() - butt_timer >= 10000) { ////////////////////////////////////// 300000
+        Serial.println("BUTT_TIMEOUT 3");              
+        StartTime = 0;
+        Serial.println("BUTT_TIMEOUT 4");              
+        state = WAIT_FOR_ALARM;
+        Serial.println("BUTT_TIMEOUT 5");              
+        }
+        Serial.println("BUTT_TIMEOUT break");              
+        break;
   }
 }
-
+}
+}

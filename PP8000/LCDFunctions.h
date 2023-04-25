@@ -1,6 +1,6 @@
 float humidity = 0.00; //kosteusprosentin muuttuja
 int tempAddress = 0x48; //Lämpötilasensorin muistiosoite
-float temp = 0; //lämpötilamuuttuja, tätä tarvitaan todellisen kosteus% laskemisessa
+float temp = 0.00; //lämpötilamuuttuja, tätä tarvitaan todellisen kosteus% laskemisessa
 
 // Määritetään custom-merkit ääkkösille. Luodaan kaksiulotteinen taulukko, jossa on neljä riviä ja yhdellä rivillä on aina kahdeksan saraketta (LCD-näytössä on 8-riviä, joita nuo sarakkeet ohjaavat).
 // Noihin kahdeksaan sarakkeeseen on määritelty kunkin ääkkösen kirjoitusasu siten, että 0 tarkoittaa LCD-näytöllä tyhjää pikseliä ja 1 tarkoittaa näytöllä täytettyä pikseliä.

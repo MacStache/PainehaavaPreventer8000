@@ -88,5 +88,5 @@ void lcdFunc(LiquidCrystal& lcd, uint8_t col, uint8_t row, String message) // LC
 }
 
 void humidityCalc(HIH4030 sensor, float temperature){ //Alotietaan kosteuden laskenta ja luodaan lämpötilamuuttuja
-  humidity = sensor.getTrueRH(temperature); //luodaan humidity -muuttuja, jonka arvo otetaan kirjaston getTrueRH -funktiosta jolle syötetään lämpötila laskentaa varten
+  humidity = sensor.getTrueRH(temperature)*-1.2; //luodaan humidity -muuttuja, jonka arvo otetaan kirjaston getTrueRH -funktiosta jolle syötetään lämpötila laskentaa varten
 }

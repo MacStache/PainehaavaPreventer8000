@@ -4,7 +4,7 @@
 #include <Wire.h> //kosteusanturin lämpötilakirjasto
 #include "LCDFunctions.h" //LCD-funktioiden aliohjelmat
 #include "AlarmFunctions.h" //Hälytinfunktioiden aliohjelmat
-#define BREAKREMINDER 10000 // Time break //2h ajanjakso maaritellaan definessa koska se on muuttumaton                       ///////////////////// 7200000
+#define BREAKREMINDER 3600000 // Time break //1 h ajanjakso maaritellaan definessa koska se on muuttumaton
 
 //kosteusanturin määrittelyt
 #define HIH4030_OUT A0 //Kosteusanturin Analog IO pinni kytketään A0:aan
@@ -17,7 +17,7 @@ bool mittaus = false;
 bool taaraus = true; //Aseta tämä false asentoon jos et halua taarata
 
 unsigned long StartTime = 0; //Sitting timer // Istumisajan laskuri, maaritellaan lahtemaan nollasta
-const unsigned long Interval = 10000; //no weight wait period 3 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille                     ///////////////////// 180000
+const unsigned long Interval = 300000; //no weight wait period 5 min// aika jolloin asentoa muutetaan ja odotetaan painon laskeutuvan takaisin sensoreille
 
 //pinnit:
 const int HX711_dout = 10; //mcu > HX711 dout pinni
@@ -36,12 +36,11 @@ const float calibrationValue = 22500.00;   //Kalibrointimuuttuja: säädä omaan
 
 float leftPressure = 0.00; // Alustetaan muuttuja
 float rightPressure = 0.00; // Alustetaan muuttuja
-float WEIGHT_THRESHOLD = 0.00;
+float WEIGHT_THRESHOLD_START = 0.00; // Alustetaan muuttuja
+float WEIGHT_THRESHOLD_CHECK = 0.00; // Alustetaan muuttuja
 int sensorValue = 0; // alusta kosteusanturin lukema
-//float humidity = 0.00; // FIXME. Oli määritelty kahdessa paikkaa. Jätetty LCDFunktioihin, koska ei muuten kääntynyt.
 
-
-enum States {
+enum State_enum {
   WAIT_FOR_WEIGHT, WAIT_FOR_ALARM, BUTT_TIMEOUT, RESET_WAIT
 } state = WAIT_FOR_WEIGHT;
 
@@ -52,7 +51,6 @@ LiquidCrystal lcd(2,3,4,5,6,7); //määritellään käytettävät LCD-portit.
 
 void setup() {
 
-Serial.begin(9600); // DEBUG Poista tämä kun ei enää tarvita
 lcd.begin(16,2); // Määritellään LCD-näytön koko
 createCustomChars(lcd); //luodaan ääkköset
 Wire.begin(); //kosteusanturin lämpötilamittarin käynnistys
@@ -99,7 +97,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
 
   bool mittaus = true;
   static boolean newDataReady = 0; 
-  const int serialPrintInterval = 1000; //Syötteen tulostuksen nopeuden määritys. Korkeampi on hitaampi.
+  const int serialPrintInterval = 500; //Syötteen tulostuksen nopeuden määritys. Korkeampi on hitaampi.
 
   // Tarkistetaan uusi data
   if (LoadCell.update()) newDataReady = true;
@@ -110,12 +108,13 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
     // Määritellään paine-muuttujat newDataReadyn jälkeen, jotta LoadCell.getData saa päivitetyt arvot
     leftPressure = (-weight/2 + LoadCell.getData()) * -pressure; // Vasemman puolen paine elohopeamillimetreinä (-weight ja -pressure, jotta saadaan tulostumaan positiivinen paine LCD-näytölle)
     rightPressure = (weight/2 + LoadCell.getData()) * pressure; // Oikean puolen paine elohopeamillimetreinä
-    WEIGHT_THRESHOLD = (leftPressure + rightPressure) / 2 + 10; // Siirretty #definestä tähän, koska muuttuu käyttäjän painon mukaan. Viimeistä lukua muuttamalla voidaan säätää paineen huomioimisen aloitusrajaa.
+    WEIGHT_THRESHOLD_START = (leftPressure + rightPressure) / 2 + 10; // Paineraja paineen mittauksen käynnistämiseksi (oltava pienempi kuin CHECK, jotta pysytään tilakoneessa)
+    WEIGHT_THRESHOLD_CHECK = WEIGHT_THRESHOLD_START + 20; // Paineraja paineen anturilta poistumisen tarkistamiseksi (oltava suurempi kuin START, jotta pysytään tilakoneessa)
 
     if (millis() > t + serialPrintInterval) {
       if (LoadCell.getData() < 0) {  //kun < 0, niin antaa vasemman pakaran paineen
         String paine = String(int(leftPressure)); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
-        String kosteus = String(int(humidity*-3)); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String kosteus = String(int(humidity)); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Vasen: " + paine + " mmHg"); //tulostetaan stringit näytölle
         lcdFunc(lcd, 0, 1, "Kosteus: " + kosteus + " %"); //tulostetaan stringit näytölle
@@ -124,7 +123,7 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
       }        
       else {  //kun > 0, niin antaa oikean pakaran paineen
         String paine = String(int(rightPressure)); //muunnetaan painelaskelma merkkijonoksi, jotta se saadaan tulostettua
-        String kosteus = String(int(humidity*-3)); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
+        String kosteus = String(int(humidity)); //muunnetaan kosteuslaskelma merkkijonoksi, jotta se saadaan tulostettua
         lcdFunc(lcd, 255,255,"");
         lcdFunc(lcd, 0, 0, "Oikea: " + paine + " mmHg"); //tulostetaan stringit näytölle
         lcdFunc(lcd, 0, 1, "Kosteus: " + kosteus + " %"); //tulostetaan stringit näytölle
@@ -133,102 +132,62 @@ while (taaraus == true){  //Loopin alku rullataan läpi niin kauan kuin "taaraus
         }        
     }
 
-if(leftPressure > WEIGHT_THRESHOLD || rightPressure > WEIGHT_THRESHOLD) {
+if(leftPressure > WEIGHT_THRESHOLD_START || rightPressure > WEIGHT_THRESHOLD_START) {
 
-
-
- switch(state)
- 
+  switch(state)
   {
-    Serial.println("Switchiin");
     case WAIT_FOR_WEIGHT:
-    Serial.println("WAIT_FOR_WEIGHT 1");
-
       StartTime = millis();  // timeri alkaa mitata ja tallentaa aikaa
-      Serial.println("WAIT_FOR_WEIGHT 2");
-      state = WAIT_FOR_ALARM; //odotellaan hälytystä
-      Serial.println("WAIT_FOR_WEIGHT break");
+      state = WAIT_FOR_ALARM; // odotellaan hälytystä
       break;
-    
+      
     case WAIT_FOR_ALARM:
-    Serial.println("WAIT_FOR_ALARM");
-    if(millis() - StartTime >= BREAKREMINDER) { //timeri ylittää 2 tunnin määräajan
-      Serial.println("BREAKREMINDER 1");
-      alarm = true;
-      Serial.println("BREAKREMINDER 2");
-      if(alarm == true) {
-        Serial.println("BREAKREMINDER 3");
-        setupAlarm(); //funktiota kutsutaan
-        Serial.println("BREAKREMINDER 4");
-      }
-      if (leftPressure < WEIGHT_THRESHOLD && rightPressure < WEIGHT_THRESHOLD) {
-        Serial.println("BREAKREMINDER 5");
-        alarm = false;
-        Serial.println("BREAKREMINDER 6");
-        state = RESET_WAIT;
-      }
-    } 
-    else if(rightPressure >= 400 || leftPressure >= 400) {
-        Serial.println("YLIPAINE 1");
+      if(millis() - StartTime >= BREAKREMINDER) { // timeri ylittää 1 tunnin määräajan
         alarm = true;
-        Serial.println("YLIPAINE 2");
         if(alarm == true) {
-          Serial.println("YLIPAINE 3");
           setupAlarm(); //funktiota kutsutaan
-          Serial.println("YLIPAINE 4");
         }
-        if (leftPressure < WEIGHT_THRESHOLD && rightPressure < WEIGHT_THRESHOLD) {
-          Serial.println("YLIPAINE 5");
+        if (leftPressure < WEIGHT_THRESHOLD_CHECK && rightPressure < WEIGHT_THRESHOLD_CHECK) {
           alarm = false;
-          Serial.println("YLIPAINE 6");
+          state = RESET_WAIT;
+        }
+      } 
+      else if(rightPressure >= 760 || leftPressure >= 760) { // 760 mmHg asetettu ylärajaksi välittömälle hälytykselle
+        alarm = true;
+        if(alarm == true) {
+          setupAlarm(); //funktiota kutsutaan
+        }
+        if (leftPressure < WEIGHT_THRESHOLD_CHECK && rightPressure < WEIGHT_THRESHOLD_CHECK) {
+          alarm = false;
           state = BUTT_TIMEOUT;
         }
       }
-      else if(humidity >= 65.00) { //TODO 40.00
-            Serial.println("HUMIDITY 1");
+      else if(humidity >= 40) { // Kosteushälytyksen raja 40 %
             alarm = true;
-            Serial.println("HUMIDITY 2");
             if(alarm == true) {
-              Serial.println("HUMIDITY 3");
               setupAlarm(); }
-              Serial.println("HUMIDITY 4");
-              if (humidity <= 64.00) { //TODO 39.00
-                Serial.println("HUMIDITY 5");
+              if (humidity <= 35) { // Poistutaan hälytyksestä kun kosteus alle 35 %, jotta voidaan varmistua kosteuden lähteneen laskuun
                 alarm = false;
-                Serial.println("HUMIDITY 6");
                 state = RESET_WAIT;
               }
       }              
-      Serial.println("WAIT_FOR_ALARM break");
       break;
 
     case RESET_WAIT:
-    Serial.println("RESET_WAIT 1");
-        if (millis() - StartTime > Interval) { //odotetaan 3 min ennen timerin uudelleen käynnistymistä
-          Serial.println("RESET_WAIT 2");
-          StartTime = 0;
-          Serial.println("RESET_WAIT 3");
-          alarm = true;
-          Serial.println("RESET_WAIT 4");
-          state = WAIT_FOR_WEIGHT;  // resetoidaan tila ja odotetaan uutta painoa
-          Serial.println("RESET_WAIT 5");
-        }
-        Serial.println("RESET_WAIT break");
-        break;
-      
-    case BUTT_TIMEOUT:
-        Serial.println("BUTT_TIMEOUT 1");              
-        unsigned long butt_timer = 0;
-        Serial.println("BUTT_TIMEOUT 2");              
-        if(millis() - butt_timer >= 10000) { ////////////////////////////////////// 300000
-        Serial.println("BUTT_TIMEOUT 3");              
+      if (millis() - StartTime >= Interval) { //odotetaan 5 min ennen timerin uudelleen käynnistymistä
         StartTime = 0;
-        Serial.println("BUTT_TIMEOUT 4");              
-        state = WAIT_FOR_ALARM;
-        Serial.println("BUTT_TIMEOUT 5");              
-        }
-        Serial.println("BUTT_TIMEOUT break");              
-        break;
+        alarm = true;
+        state = WAIT_FOR_WEIGHT;  // resetoidaan tila ja odotetaan uutta painoa
+      }
+      break;
+      
+    case BUTT_TIMEOUT:       
+      unsigned long butt_timer = 0;           
+      if(millis() - butt_timer >= Interval) { // 5 min            
+        StartTime = 0;          
+        state = WAIT_FOR_ALARM;          
+      }            
+      break;
   }
 }
 }

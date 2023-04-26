@@ -36,7 +36,7 @@ void startUpSound() {
 
 void errorSound() {
   int k = 0;
-  int noteDurations[] ={4,4,4}; // 8=kahdeksasosanuotti, 4=neljäsosanuotti jne.
+  int noteDurations[] ={2,2,2}; // 8=kahdeksasosanuotti, 4=neljäsosanuotti jne.
   int notes[]={
     NOTE_4, NOTE_4, NOTE_4 //melodian nuottitaulukko, määritelty definessä
   };
